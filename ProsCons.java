@@ -112,84 +112,84 @@ public class Threadexample {
 } 
 ////////////////////////////////////////////////////////////////////////////////////////
 
+
 package nag;
+
 import java.util.LinkedList;
-public class sample {
-// Declare a shared list and its capacity
-private LinkedList<Integer> list;
-private int capacity;
-public sample(int capacity) {
-// Initialize the shared list and its capacity
-this.list = new LinkedList<>();
-this.capacity = capacity;
-}
-public void produce() throws InterruptedException {
-// Initialize the value to be produced
-int value = 0;
-// Run the loop indefinitely
-while (true) {
-// Synchronize on the Sample object to control access to the shared list
-synchronized (this) {
-// Wait if the shared list is already full
-while (list.size() == capacity)
-wait();
-// Produce the value and add it to the shared list
-System.out.println("Producer produced-" + value);
-list.add(value++);
-// Notify the consumer that a value is available
-notify();
-// Sleep for 1 second
-Thread.sleep(1000);
-}
-}
-}
-public void consume() throws InterruptedException {
-// Run the loop indefinitely
-while (true) {
-// Synchronize on the Sample object to control access to the shared list
-synchronized (this) {
-// Wait if the shared list is empty
-while (list.size() == 0)
-wait();
-// Consume the first value from the shared list
-int val = list.removeFirst();
-System.out.println("Consumer consumed-" + val);
-// Notify the producer that there is space available in the shared list
-notify();
-// Sleep for 1 second
-Thread.sleep(1000);
-}
-}
-}
-public static void main(String[] args) {
-// Create an instance of the Sample class with a capacity of 10
-sample pc = new sample(10);
-// Create the producer thread
-Thread producer = new Thread(new Runnable() {
-@Override
-public void run() {
-try {
-// Run the produce method in the producer thread
-pc.produce();
-} catch (InterruptedException e) {
-e.printStackTrace();
-}
-}
-});
-// Create the consumer thread
-Thread consumer = new Thread(new Runnable() {
-@Override
-public void run() {
-try {
-// Run the consume method in the consumer thread
-pc.consume();
-} catch (InterruptedException e) {
-e.printStackTrace();
-}
-}
-});
-// Start the producer and consumer threads
-producer.start();
-consumer.start();
-}
+
+public class ProducerConsumerExample {
+  // Declare a field to store a LinkedList of integers
+  private LinkedList<Integer> list = new LinkedList<>();
+  
+  // Declare a field to store the maximum size of the LinkedList
+  private final int LIMIT = 10;
+  
+  // Declare a field to store an object for synchronization
+  private Object lock = new Object();
+
+  // Define a method to produce integers and add them to the LinkedList
+  public void produce() throws InterruptedException {
+    int value = 0; // Initialize a variable to store the integer value being produced
+    while (true) { // Loop indefinitely
+      synchronized (lock) { // Synchronize on the lock object
+        // Check if the size of the LinkedList has reached the maximum size
+        while (list.size() == LIMIT) {
+          lock.wait(); // Wait on the lock object to release the lock and allow other threads to access the LinkedList
+        }
+        list.add(value); // Add the value to the LinkedList
+        System.out.println("Produced: " + value); // Print the produced value
+        value++; // Increment the value
+        lock.notify(); // Notify the consumer thread that the LinkedList has been updated
+      }
+    }
+  }
+
+  // Define a method to consume integers from the LinkedList
+  public void consume() throws InterruptedException {
+    while (true) { // Loop indefinitely
+      synchronized (lock) { // Synchronize on the lock object
+        // Check if the LinkedList is empty
+        while (list.size() == 0) {
+          lock.wait(); // Wait on the lock object to release the lock and allow other threads to access the LinkedList
+        }
+        int value = list.removeFirst(); // Remove the first element from the LinkedList
+        System.out.println("Consumed: " + value); // Print the consumed value
+        lock.notify(); // Notify the producer thread that the LinkedList has been updated
+      }
+      Thread.sleep(1000); // Sleep for 1 second
+    }
+  }
+
+  public static void main(String[] args) {
+    // Create an instance of the ProducerConsumerExample class
+    ProducerConsumerExample example = new ProducerConsumerExample();
+
+    // Create a new thread to run the produce method
+    Thread producerThread = new Thread(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          example.produce(); // Call the produce method on the example object
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    });
+
+    // Create a new thread to run the consume method
+    Thread consumerThread = new Thread(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          example.consume(); // Call the consume method on the example object
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    });
+
+    // Start the producer and consumer threads
+    producerThread.start();
+    consumerThread.start();
+  }
 }
